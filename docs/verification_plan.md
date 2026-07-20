@@ -27,3 +27,8 @@ warp/register addresses across all eight lane banks. It checks two independent
 read addresses, complementary partial masks, inactive-lane preservation,
 same-cycle forwarding on both ports, forwarding rejection for a different warp,
 invalid-read behavior, and the per-lane replica-write assertions.
+
+The predicate-register-file test covers all 16 warp/predicate addresses, all
+eight lane bits, full and complementary partial masks, same-cycle forwarding,
+warp and predicate forwarding rejection, invalid reads, reset recovery, masked
+write assertions, and unmasked-lane preservation assertions.

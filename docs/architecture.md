@@ -20,6 +20,12 @@ write validity, warp, register, and lane mask; unselected lanes use stored data.
 Simulation assertions prove that an accepted lane write becomes identical in
 both physical replicas on the following cycle.
 
+The predicate file stores one eight-bit lane mask for each of four predicate
+registers in each warp. Its 128 state bits use resettable flip-flops rather than
+a bulk memory because deterministic false predicates after reset are useful and
+the storage cost is small. Writes carry an independent lane mask, and same-cycle
+forwarding uses validity, warp, predicate index, and lane selection.
+
 The implementation sequence is contract/tools, single warp, multi-warp
 scheduling, shared memory, divergence, global memory, barriers, standalone
 verification closure, ASIC physical implementation, ASIC-driven RTL refinement,

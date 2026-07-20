@@ -21,3 +21,11 @@ verilator --binary --timing --assert --Wall \
   rtl/register_file/vector_register_file.sv \
   tb/unit/tb_vector_register_file.sv
 build/verilator/vector_register_file/Vtb_vector_register_file
+
+mkdir -p build/verilator/predicate_register_file
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/predicate_register_file \
+  --top-module tb_predicate_register_file \
+  rtl/register_file/predicate_register_file.sv \
+  tb/unit/tb_predicate_register_file.sv
+build/verilator/predicate_register_file/Vtb_predicate_register_file

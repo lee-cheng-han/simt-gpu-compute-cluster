@@ -15,7 +15,7 @@ disassembler, functional emulator, programs, and software regression exist.
 
 ## Milestone 2: single-warp vector processor
 
-Status: in progress; the decoder and replicated vector register file are
+Status: in progress; the decoder plus vector and predicate register files are
 complete. Build one eight-thread warp with
 fetch, lane-banked replicated vector registers, predicate registers, eight
 integer lanes, writeback, and a non-AXI memory model. Acceptance requires vector

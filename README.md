@@ -9,9 +9,9 @@ begins in Milestone 2.
 
 ```text
 Release:       v0.2 in progress
-Completed:     ISA tools, emulator, decoder, replicated vector register file
+Completed:     ISA tools, emulator, decoder, vector and predicate register files
 Passing:       Software regression plus decoder and register-file RTL tests
-Next:          Predicate register file
+Next:          Eight-lane integer ALU
 Not started:   Multi-warp core, verification closure, ASIC and FPGA backends
 ```
 
