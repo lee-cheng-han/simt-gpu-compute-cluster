@@ -1,0 +1,5 @@
+MOVI R1, 128
+MOVI R2, 42
+ST.G [R1], R2
+LD.G R3, [R1]
+EXIT

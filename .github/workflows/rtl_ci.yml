@@ -1,0 +1,9 @@
+name: milestone-1
+on: [push, pull_request]
+jobs:
+  tools-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y verilator
+      - run: make test

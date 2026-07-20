@@ -1,0 +1,7 @@
+MOVI R1, 1
+MOVI R2, 1
+SETP.EQ P0, R1, R2
+@P0 BRA taken
+MOVI R3, 9
+taken: MOVI R3, 5
+EXIT

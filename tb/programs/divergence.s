@@ -1,0 +1,10 @@
+S2R R1, LANEID
+MOVI R2, 4
+SETP.LT P0, R1, R2
+SSY join
+@P0 BRA taken
+MOVI R3, 9
+BRA join
+taken: MOVI R3, 5
+join: SYNC
+EXIT

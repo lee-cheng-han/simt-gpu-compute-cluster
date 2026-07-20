@@ -1,0 +1,12 @@
+/build/
+/xsim.dir/
+/xvlog.log
+/xvlog.pb
+/xelab.log
+/xelab.pb
+/xsim.log
+/xsim.jou
+/xsim_*.backup.log
+/xsim_*.backup.jou
+__pycache__/
+*.pyc

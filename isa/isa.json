@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "word_bits": 32,
+  "fields": {"opcode": [31,26], "pred_enable": [25,25], "pred_invert": [24,24], "pred": [23,22], "rd": [21,18], "ra": [17,14], "rb": [13,10], "imm10": [9,0]},
+  "opcodes": [
+    {"name":"NOP","code":0,"format":"none"}, {"name":"ADD","code":1,"format":"rrr"},
+    {"name":"SUB","code":2,"format":"rrr"}, {"name":"MUL","code":3,"format":"rrr"},
+    {"name":"MIN","code":4,"format":"rrr"}, {"name":"MAX","code":5,"format":"rrr"},
+    {"name":"AND","code":6,"format":"rrr"}, {"name":"OR","code":7,"format":"rrr"},
+    {"name":"XOR","code":8,"format":"rrr"}, {"name":"NOT","code":9,"format":"rr"},
+    {"name":"SHL","code":10,"format":"rrr"}, {"name":"SHR","code":11,"format":"rrr"},
+    {"name":"SAR","code":12,"format":"rrr"}, {"name":"MOV","code":13,"format":"rr"},
+    {"name":"MOVI","code":14,"format":"ri"}, {"name":"SEL","code":15,"format":"rrr"},
+    {"name":"SETP.EQ","code":16,"format":"prr"}, {"name":"SETP.NE","code":17,"format":"prr"},
+    {"name":"SETP.LT","code":18,"format":"prr"}, {"name":"SETP.LE","code":19,"format":"prr"},
+    {"name":"SETP.GT","code":20,"format":"prr"}, {"name":"SETP.GE","code":21,"format":"prr"},
+    {"name":"LD.G","code":22,"format":"load"}, {"name":"ST.G","code":23,"format":"store"},
+    {"name":"LD.S","code":24,"format":"load"}, {"name":"ST.S","code":25,"format":"store"},
+    {"name":"BRA","code":26,"format":"branch"}, {"name":"SSY","code":27,"format":"branch"},
+    {"name":"BAR","code":28,"format":"none"}, {"name":"S2R","code":29,"format":"special"},
+    {"name":"EXIT","code":30,"format":"none"}, {"name":"SYNC","code":31,"format":"none"}
+  ],
+  "special_registers": {"TID":0,"WID":1,"BID":2,"LANEID":3,"GRIDSIZE":4,"BLOCKSIZE":5,"ARGBASE":6}
+}
