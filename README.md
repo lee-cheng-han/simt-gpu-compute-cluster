@@ -1,17 +1,17 @@
 # FPGA-Based Programmable SIMT GPU Compute Cluster
 
 An FPGA-oriented custom SIMT compute architecture targeting the Zybo Z7-20. It is
-not CUDA or OpenCL compatible. Milestones 0 and 1 freeze the architectural and
-ISA contracts and provide executable software tools; synthesizable execution RTL
-begins in Milestone 2.
+not CUDA or OpenCL compatible. The architectural and ISA contracts are frozen,
+the software tools are executable, and synthesizable compute-core RTL is under
+active development.
 
 ## Current status
 
 ```text
 Release:       v0.2 in progress
-Completed:     ISA tools, emulator, decoder, vector and predicate register files
-Passing:       Software regression plus decoder and register-file RTL tests
-Next:          Eight-lane integer ALU
+Completed:     ISA tools, emulator, decoder, register files, eight-lane integer ALU
+Passing:       Software regression plus decoder, register-file, and ALU RTL tests
+Next:          Instruction fetch and single-warp control
 Not started:   Multi-warp core, verification closure, ASIC and FPGA backends
 ```
 
@@ -33,4 +33,4 @@ The compute cluster is developed as technology-independent, ASIC-quality RTL.
 After standalone verification closure, it receives an open-PDK ASIC synthesis
 and physical-design study. Physical results drive a re-verified optimization
 pass before Zynq integration and real execution on the Zybo Z7-20. See
-[`docs/roadmap.md`](docs/roadmap.md) for the milestone gates and deliverables.
+[`docs/roadmap.md`](docs/roadmap.md) for the release gates and deliverables.

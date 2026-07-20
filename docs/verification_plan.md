@@ -1,6 +1,6 @@
 # Verification plan
 
-Milestone 0/1 uses Python unit tests for encoding, round trips, diagnostics, and
+The software-tool release uses Python unit tests for encoding, round trips, diagnostics, and
 the generated ISA binding, plus black-box C++ emulator tests for arithmetic,
 predication, uniform and divergent branches, aligned memory, vector-add
 semantics, exit, illegal instructions, and SIMT-stack overflow/underflow.
@@ -16,7 +16,7 @@ opcode×dependency, scheduler×ready count, memory×coalescing, branch×divergen
 and shared operation×conflict. RTL traces will be compared at first mismatch with
 the emulator's PC, instruction, masks, writes, memory, stack, and fault events.
 
-The Milestone 2 decoder unit test exercises every allocated opcode, signed
+The decoder unit test exercises every allocated opcode, signed
 immediate extraction, all output metadata classes, a reserved opcode, and a
 representative violation of each canonical-field rule. It runs as a compiled
 SystemVerilog simulation through `make rtl-test`; XSim separately compiles and
@@ -32,3 +32,10 @@ The predicate-register-file test covers all 16 warp/predicate addresses, all
 eight lane bits, full and complementary partial masks, same-cycle forwarding,
 warp and predicate forwarding rejection, invalid reads, reset recovery, masked
 write assertions, and unmasked-lane preservation assertions.
+
+The integer-lane/vector-ALU test covers every arithmetic, logic, shift,
+comparison, movement, selection, special-register, branch, and memory-address
+operation. It explicitly checks two's-complement `MIN`/`MAX`/comparisons,
+low-32-bit multiply, five-bit shift amounts, immediate sign extension, inactive
+output suppression, predicate inversion and gating, `SEL` on every active lane,
+write masks, unsupported operations, and vector address/store-data generation.

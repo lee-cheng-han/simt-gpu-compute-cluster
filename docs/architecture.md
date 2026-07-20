@@ -26,6 +26,16 @@ a bulk memory because deterministic false predicates after reset are useful and
 the storage cost is small. Writes carry an independent lane mask, and same-cycle
 forwarding uses validity, warp, predicate index, and lane selection.
 
+The integer execution unit is composed of one combinational `integer_lane` per
+physical lane and an eight-lane wrapper. The wrapper computes the execution mask
+from instruction validity, the active mask, and the selected predicate. `SEL`
+uses its predicate only for data selection and therefore does not gate execution.
+The baseline multiplier is combinational for single-warp integration; the
+multi-cycle pipelined multiplier and warp wakeup protocol are added with the
+multi-warp scheduler and scoreboard.
+Memory operations produce aligned-address candidates and store data but do not
+perform memory side effects inside the ALU.
+
 The implementation sequence is contract/tools, single warp, multi-warp
 scheduling, shared memory, divergence, global memory, barriers, standalone
 verification closure, ASIC physical implementation, ASIC-driven RTL refinement,
@@ -33,7 +43,7 @@ and finally Zynq integration and FPGA bring-up. The complete ordering and entry
 gates are defined in `docs/roadmap.md`. Floating point, caches, multiple clusters,
 coherence, and virtual memory are explicitly outside the baseline.
 
-## Milestone 2 decoder contract
+## Decoder contract
 
 The combinational decoder exposes raw register, predicate, and signed-immediate
 fields plus dependency metadata (`uses_ra`, `uses_rb`, general/predicate write),

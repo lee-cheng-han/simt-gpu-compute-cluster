@@ -29,3 +29,13 @@ verilator --binary --timing --assert --Wall \
   rtl/register_file/predicate_register_file.sv \
   tb/unit/tb_predicate_register_file.sv
 build/verilator/predicate_register_file/Vtb_predicate_register_file
+
+mkdir -p build/verilator/vector_integer_alu
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/vector_integer_alu \
+  --top-module tb_vector_integer_alu \
+  build/simt_isa_pkg.sv \
+  rtl/execute/integer_lane.sv \
+  rtl/execute/vector_integer_alu.sv \
+  tb/unit/tb_vector_integer_alu.sv
+build/verilator/vector_integer_alu/Vtb_vector_integer_alu

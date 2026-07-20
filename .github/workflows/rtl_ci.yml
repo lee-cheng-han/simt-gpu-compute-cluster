@@ -1,4 +1,4 @@
-name: milestone-1
+name: simt-core-regression
 on: [push, pull_request]
 jobs:
   tools-model:
