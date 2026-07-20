@@ -9,9 +9,9 @@ active development.
 
 ```text
 Release:       v0.2 in progress
-Completed:     ISA tools, emulator, decoder, register files, eight-lane integer ALU
-Passing:       Software regression plus decoder, register-file, and ALU RTL tests
-Next:          Instruction fetch and single-warp control
+Completed:     ISA tools, emulator, fetch/decode, register files, integer ALU
+Passing:       Software regression and all completed RTL unit tests
+Next:          Single-warp control and writeback
 Not started:   Multi-warp core, verification closure, ASIC and FPGA backends
 ```
 

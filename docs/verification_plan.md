@@ -39,3 +39,9 @@ operation. It explicitly checks two's-complement `MIN`/`MAX`/comparisons,
 low-32-bit multiply, five-bit shift amounts, immediate sign extension, inactive
 output suppression, predicate inversion and gating, `SEL` on every active lane,
 write masks, unsupported operations, and vector address/store-data generation.
+
+The instruction-fetch test programs every memory word, checks sequential fetch,
+multi-cycle downstream stalls, stable response data, redirects, final-word
+execution, sequential and launch-time range faults, sticky fault reporting,
+software clear, restart, and halt. An assertion rejects ambiguous simultaneous
+programming and fetching of the same instruction word.

@@ -15,8 +15,8 @@ disassembler, functional emulator, programs, and software regression exist.
 
 ## Release v0.2: single-warp vector processor
 
-Status: in progress; decode, vector and predicate register files, and the
-eight-lane integer ALU are complete. Build one eight-thread warp with
+Status: in progress; instruction memory, fetch/decode, vector and predicate
+register files, and the eight-lane integer ALU are complete. Build one eight-thread warp with
 fetch, lane-banked replicated vector registers, predicate registers, eight
 integer lanes, writeback, and a non-AXI memory model. Acceptance requires vector
 addition, forwarding and replica checks, masked-write preservation, and emulator

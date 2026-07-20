@@ -39,3 +39,12 @@ verilator --binary --timing --assert --Wall \
   rtl/execute/vector_integer_alu.sv \
   tb/unit/tb_vector_integer_alu.sv
 build/verilator/vector_integer_alu/Vtb_vector_integer_alu
+
+mkdir -p build/verilator/instruction_fetch
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/instruction_fetch \
+  --top-module tb_instruction_fetch \
+  rtl/frontend/instruction_memory.sv \
+  rtl/frontend/instruction_fetch.sv \
+  tb/unit/tb_instruction_fetch.sv
+build/verilator/instruction_fetch/Vtb_instruction_fetch

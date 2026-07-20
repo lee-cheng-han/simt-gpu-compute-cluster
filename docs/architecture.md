@@ -36,6 +36,15 @@ multi-warp scheduler and scoreboard.
 Memory operations produce aligned-address candidates and store data but do not
 perform memory side effects inside the ALU.
 
+The architectural PC is a 32-bit instruction-word index. The baseline
+instruction-memory wrapper provides a combinational read and a synchronous
+programming port, allowing one fetch per cycle when downstream is ready. The
+fetch unit buffers its output, holds PC and instruction stable under backpressure,
+discards buffered sequential work on redirect, and reports a sticky range fault.
+Programming and fetching the same word concurrently is an illegal integration
+condition checked by assertion. A registered SRAM/BRAM backend may be introduced
+behind an adapter while preserving the fetch valid/ready contract.
+
 The implementation sequence is contract/tools, single warp, multi-warp
 scheduling, shared memory, divergence, global memory, barriers, standalone
 verification closure, ASIC physical implementation, ASIC-driven RTL refinement,
