@@ -1,101 +1,132 @@
-# Development roadmap
+# Tapeout development roadmap
 
-The project uses an ASIC-first, FPGA-proven development order. The architectural
-SIMT cluster remains technology independent. ASIC and FPGA memory, clocking, and
-host interfaces are implemented only behind wrappers or top-level boundaries.
+This roadmap is subordinate to `docs/architecture.md`. Release stages are named
+by their engineering exit criteria rather than internal sequence numbers.
 
-The ASIC deliverable is a reproducible synthesis and physical-design study using
-an open PDK, not a fabrication claim. The final FPGA deliverable is real execution
-on the Zybo Z7-20.
+## Specification merge
 
-## Release v0.1: architecture and software tools
+Audit existing code and tests, freeze one authoritative contract, remove
+contradictory legacy platform descriptions, and preserve passing work.
+Create and maintain `docs/requirements_traceability.md`, mapping every normative
+requirement to RTL, directed tests, assertions/formal properties, coverage, and
+current status.
+Exit requires clean Python, C++, Verilator, and XSim regressions and no unresolved
+policy conflict. The traceability matrix must contain no unowned requirement.
 
-Status: complete. The architectural contracts, canonical ISA, assembler,
-disassembler, functional emulator, programs, and software regression exist.
+## SRAM and implementation feasibility
 
-## Release v0.2: single-warp vector processor
+Before architectural freeze, select actual instruction, scratchpad, and shared
+SRAM macros from the chosen open-PDK flow. Confirm supported widths and depths,
+logical banking, Liberty/LEF/GDS/model availability, power-pin compatibility,
+BIST-port feasibility, preliminary placement, routing channels, and timing across
+each macro boundary. Run early synthesis and a trial floorplan around those real
+views. Behavioral wrappers may remain during core development, but memory size,
+banking, timing, and floorplan assumptions cannot freeze without this evidence.
 
-Status: in progress; instruction memory, fetch/decode, vector and predicate
-register files, and the eight-lane integer ALU are complete. Build one eight-thread warp with
-fetch, lane-banked replicated vector registers, predicate registers, eight
-integer lanes, writeback, and a non-AXI memory model. Acceptance requires vector
-addition, forwarding and replica checks, masked-write preservation, and emulator
-agreement.
+## Integrated single-warp processor
 
-## Release v0.3: four warps, scheduler, and scoreboard
+Connect instruction memory, fetch, decode, dependency checks, register files,
+predicate state, eight ALU lanes, ALU completion queue, architectural writeback,
+and exit. Execute movement, arithmetic, logic, shifts, comparisons, predication,
+`SEL`, `S2R`, and `EXIT` with instruction-level emulator agreement.
+The GPR and predicate scoreboard skeleton is part of this integration, so this
+stage is not limited to manually scheduled dependency-safe programs.
 
-Add four warp contexts, round-robin scheduling, per-warp dependency tracking, a
-multi-cycle multiplier, blocking, and wakeup. Acceptance requires fair progress
-and correct RAW/WAW behavior under backpressure.
+## Four-warp execution and multiplier
 
-## Shared-memory integration
-
-Add eight banks, conflicts, replay, read broadcast, and counters. No active lane
-request may be lost or duplicated, and all conflict categories must match the
-emulator.
+Extend the scoreboards across all warp state, add round-robin scheduling, three-stage
+multiplier, multiplier queue, two-source arbitration, epoch/quiescence, and
+scheduler/arbiter fairness. Publish one-warp versus four-warp arithmetic results.
 
 ## Divergence and reconvergence
 
-Add active-mask control and the depth-8 SIMT stack using `SSY`/`BRA`/`SYNC`.
-Acceptance includes uniform, partial, alternating, nested, overflow, and
-underflow cases with side-effect suppression on faults.
+Integrate branch masks, `SSY`, `SYNC`, nested SIMT stack behavior, redirects, and
+fatal stack faults with differential and formal evidence.
 
-## Global-memory coalescing
+## Shared memory and barriers
 
-Add 32-byte segment grouping, four-beat 64-bit transactions, byte enables,
-request metadata, lane response mapping, and a randomized protocol-level memory
-model. The cluster-facing interface remains independent of AXI details.
+Integrate eight shared banks, replay, broadcast, tracker behavior, barriers,
+ordering, and deadlock watchdog. Exit requires a passing multi-warp reduction.
 
-## Thread blocks and barriers
+## General scratchpad and memory completion
 
-Add one resident block of up to four warps, dispatch, barrier arrival/release,
-block completion, programming-model error checks, and a simulation watchdog.
-Acceptance includes a shared-memory parallel reduction.
+Integrate the 4 KiB eight-bank scratchpad, four trackers, response collector,
+memory queue, three-source arbitration, store ordering, load visibility, and
+stale-response rejection. A fifth operation and second same-warp operation must
+backpressure safely.
 
-## Release v1.0: standalone verification closure
+## Standalone-core release
 
-Close assertions, explicit functional coverage, constrained random programs,
-emulator/RTL differential traces, fault injection, and long regressions. Every
-feature must map to tests and coverage, with no unexplained failures remaining.
+Complete workloads, counters, fault model, differential traces, random generation,
+emulator memory ordering, and quantitative scheduler/memory/divergence studies.
+Shared-memory reduction is the flagship end-to-end workload. It must exercise
+four-warp scheduling, bank conflicts and replay, barriers, predication, ordering,
+and performance counters. Matrix multiplication is a secondary workload.
 
-This is the physical-implementation entry gate. The standalone cluster must be
-synthesizable and contain no FPGA-specific primitives.
+## Verification closure
 
-## Release v1.1: ASIC synthesis and physical design
+Close assertions, bounded formal properties, numerical functional coverage,
+long seeded regressions, fairness stress, bug injection, requirements traceability,
+and documented limitations. No unexplained mismatch may remain.
 
-Create ASIC-compatible memory wrappers and run a reproducible Yosys/OpenROAD flow
-with a supported open PDK. Perform lint, synthesis, mapping, floorplanning,
-placement, clock-tree synthesis, routing, static timing, area, power, congestion,
-and critical-path analysis.
+## Continuous-integration release gate
 
-Evaluate area-oriented, balanced, and performance-oriented configurations. All
-results must be identified as estimates from a non-fabricated study.
+Every merge candidate runs canonical ISA-generation consistency, assembler and
+disassembler tests, emulator tests, RTL lint, Verilator unit tests, selected
+integration programs, architectural trace comparison, documentation-link and
+contract-consistency checks, and `git diff --check`. The required set must pass
+from a clean checkout with pinned tool versions. XSim, long random regressions,
+formal proofs, synthesis, DFT, and physical implementation remain scheduled or
+manually triggered jobs whose reports are required at their release gates.
 
-## ASIC-driven optimization and re-verification
+## ASIC architecture freeze
 
-Use physical evidence to motivate at least two RTL or microarchitecture changes.
-Record before/after PPA, congestion, timing, and benchmark effects. Run the full
-architectural regression after every change and retain the best verified core.
+Use early synthesis and floorplanning to freeze ISA, pipeline, register-file
+organization, SRAM macros, queue depths, epoch, host map, clock/reset, DFT ports,
+physical hierarchy, and the selected MPW harness contract. Exit requires qualified
+SRAM views, preliminary macro placement and boundary timing, and no unresolved
+architectural dependency on an assumed memory implementation.
 
-## Zynq host and FPGA integration
+## Static RTL signoff
 
-Add FPGA BRAM wrappers, AXI4-Lite control, the AXI4 DDR master, command processor,
-Zynq processing-system integration, bare-metal ARM runtime, kernel loader, and
-completion/error handling. FPGA wrappers preserve the ASIC core's memory contract.
+Close RTL lint, clock-domain crossings, reset-domain crossings, reset assertion
+and deassertion behavior, and functional/host/scan/BIST clock interactions before
+the synthesis freeze. Review every crossing and document every synchronizer,
+false path, asynchronous path, and tool waiver. Exit requires clean reports or
+explicitly justified exceptions with owners.
 
-## Release v1.2: FPGA bring-up and optimization
+## Host and SRAM integration
 
-Run kernels on the Zybo Z7-20, compare against the ARM reference, close timing at
-50 MHz, and pursue 75--100 MHz. Report LUT, flip-flop, BRAM, DSP, timing,
-benchmark cycles, lane utilization, warp IPC, and memory efficiency.
+Add the internal bus, Wishbone wrapper, SRAM macro wrappers and views, host
+loading/launch, quiescence/fault reporting, ownership checks, and instruction-write
+busy fault.
 
-## Backend relationship
+## MPW harness integration
 
-```text
-Verified technology-independent SIMT cluster
-├── ASIC backend: SRAM wrappers and open-PDK physical-design study
-└── FPGA backend: BRAM wrappers, AXI, Zynq ARM, DDR, and board execution
-```
+Deliver a harnessed digital macro: integrate the selected shuttle harness, address
+and I/O map, top-level power connections, clocks and resets, Wishbone attachment,
+and submission configuration. Close harness timing, full-wrapper DRC/LVS, shuttle
+prechecks, and submission-specific repository validation. A standalone pad ring,
+package, and board are outside this release target.
 
-Floating point, packed INT8, caches, virtual memory, multiple clusters, graphics,
-and commercial programming-API compatibility remain post-baseline work.
+## DFT release
+
+Complete scan architecture and simulation, supported ATPG reporting, destructive
+SRAM BIST, test ownership, and functional/scan/BIST timing constraints.
+
+## Physical implementation
+
+Complete synthesis, floorplan, macro placement, PDN, placement, CTS, routing,
+extraction, timing optimization, antenna repair, fill, re-extraction, and ECO loop.
+Every violation enters a tracked loop: root-cause analysis, RTL or physical ECO,
+incremental implementation, extraction, STA, equivalence, DRC/LVS, and affected
+functional regressions. An ECO closes only when all impacted evidence is rerun.
+
+## Signoff and GDS release
+
+Complete supported MMMC STA, activity-based power, IR/EM review, DRC, LVS,
+antenna, density/connectivity, equivalence, GLS/SDF, scan/BIST validation, release
+audit, archived reports/checksums, bring-up firmware, and silicon test plan. The
+filled GDS is the signoff database. After final fill, rerun extraction, setup/hold
+STA, DRC, LVS, antenna, density, power review, and final-netlist consistency; no
+pre-fill result may substitute for this exit gate.

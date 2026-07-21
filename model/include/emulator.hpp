@@ -9,7 +9,7 @@ enum class Fault { None, IllegalInstruction, PcOutOfRange, MisalignedMemory, Mem
 struct Result { Fault fault{Fault::None}; uint32_t fault_pc{}; uint64_t steps{}; bool exited{}; };
 class Emulator {
  public:
-  explicit Emulator(std::size_t memory_bytes=65536, std::size_t shared_bytes=8192);
+  explicit Emulator(std::size_t memory_bytes=4096, std::size_t shared_bytes=2048);
   void load_program(const std::vector<uint32_t>& words); void load_memory_text(const std::string& path);
   Result run(uint64_t max_steps=100000); void dump(const std::string& path) const;
  private:

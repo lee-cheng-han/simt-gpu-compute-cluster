@@ -7,7 +7,9 @@ control-flow side effect. Arithmetic is modulo 2^32; signed comparisons, `MIN`,
 
 The initial emulator runs one warp of eight lanes deterministically. Each
 lane starts with zeroed registers and predicates; P0--P3 are ordinary predicate
-registers. R0 is writable. Memory is little-endian and byte addressed.
+registers. R0 is writable. The general scratchpad and shared memory are
+little-endian and byte addressed. Predicate results are not forwarded: consumers
+wait until architectural predicate commit.
 
 `SSY reconv` pushes a reconvergence token and establishes the reconvergence PC
 for the next potentially divergent `BRA`. The instruction at `reconv` must be
@@ -28,3 +30,8 @@ is frozen here.
 In-order issue plus refusing a destination already pending prevents WAW hazards;
 source pending bits prevent RAW hazards. The model is functional and completes
 each instruction atomically, while later RTL may interleave stalled warps.
+
+`EXIT` removes only the lanes in its effective predicated exit mask from the
+current active mask. A warp finishes when no lane remains active after all
+deferred divergent paths have been serviced. Kernel completion is a drained-state
+condition, not an `EXIT` decode or execute event.

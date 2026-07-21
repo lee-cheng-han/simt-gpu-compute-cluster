@@ -7,11 +7,17 @@ semantics, exit, illegal instructions, and SIMT-stack overflow/underflow.
 Seeds must be printed for randomized tests. `make test` is the
 single regression entry point.
 
+`docs/requirements_traceability.md` is the closure index. Each normative
+requirement must name its RTL owner, directed test, assertion or formal property,
+coverage point, and status. A blank field is an explicit verification gap, not an
+implicit waiver.
+
 Later modules require self-checking unit tests and assertions before integration.
 The closure matrix covers every opcode/register/predicate/lane/warp; RAW and
-multi-cycle completion; active-mask categories and nested divergence; shared
-conflict degree/broadcast; coalescing degree; scheduler-ready counts; AXI
-backpressure; barrier order; and every fault. Crosses are opcode×mask,
+multi-cycle completion; active-mask categories and nested divergence; shared and
+scratchpad conflict degree/broadcast; memory-tracker occupancy; scheduler-ready
+counts; Wishbone backpressure; completion collisions; barrier order; and every
+fault. Crosses are opcode×mask,
 opcode×dependency, scheduler×ready count, memory×coalescing, branch×divergence,
 and shared operation×conflict. RTL traces will be compared at first mismatch with
 the emulator's PC, instruction, masks, writes, memory, stack, and fault events.
@@ -29,9 +35,9 @@ same-cycle forwarding on both ports, forwarding rejection for a different warp,
 invalid-read behavior, and the per-lane replica-write assertions.
 
 The predicate-register-file test covers all 16 warp/predicate addresses, all
-eight lane bits, full and complementary partial masks, same-cycle forwarding,
-warp and predicate forwarding rejection, invalid reads, reset recovery, masked
-write assertions, and unmasked-lane preservation assertions.
+eight lane bits, full and complementary partial masks, absence of forwarding,
+concurrent-write isolation, invalid reads, reset recovery, masked-write assertions,
+and unmasked-lane preservation assertions.
 
 The integer-lane/vector-ALU test covers every arithmetic, logic, shift,
 comparison, movement, selection, special-register, branch, and memory-address
@@ -45,3 +51,26 @@ multi-cycle downstream stalls, stable response data, redirects, final-word
 execution, sequential and launch-time range faults, sticky fault reporting,
 software clear, restart, and halt. An assertion rejects ambiguous simultaneous
 programming and fetching of the same instruction word.
+
+The writeback test covers buffered backpressure, complete payload stability,
+GPR-only and predicate-only commits, lane-mask preservation, simultaneous
+drain/refill, flush cancellation, and empty-mask suppression. Assertions ensure
+that stalled payloads remain stable and that empty architectural writes cannot
+reach either register file.
+
+The completion-queue test transports the complete canonical tagged record and
+covers empty/one/full occupancy, prolonged output backpressure, FIFO ordering,
+simultaneous drain/refill, ring-pointer wraparound, and flush cancellation.
+Assertions check occupancy bounds, valid record tags, and complete payload
+stability while stalled. Three instantiated sources, arbitration, and end-to-end
+conservation remain integration-level obligations.
+
+Before synthesis freeze, static verification closes RTL lint, CDC, reset-domain
+crossings, reset deassertion, and interactions among functional, host, scan, and
+BIST clocks. Every reported crossing and exception receives a documented review.
+
+The merge CI gate runs ISA-generation consistency, Python assembler/disassembler
+tests, C++ emulator tests, RTL lint, Verilator unit tests, selected integrated
+programs, first-mismatch trace comparison, documentation consistency, and diff
+format checks from a clean checkout. Large XSim, formal, synthesis, DFT, and
+physical jobs may run on schedules or explicit release triggers.

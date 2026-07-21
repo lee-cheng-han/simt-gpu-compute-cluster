@@ -23,16 +23,8 @@ module predicate_register_file #(
 
   always_comb begin
     read_mask_o = '0;
-    if (read_valid_i && !rst) begin
+    if (read_valid_i && !rst)
       read_mask_o = predicates[read_warp_i][read_pred_i];
-      if (write_valid_i && write_warp_i == read_warp_i &&
-          write_pred_i == read_pred_i) begin
-        for (int unsigned lane = 0; lane < LANES; lane++) begin
-          if (write_lane_mask_i[lane])
-            read_mask_o[lane] = write_data_i[lane];
-        end
-      end
-    end
   end
 
   always_ff @(posedge clk) begin

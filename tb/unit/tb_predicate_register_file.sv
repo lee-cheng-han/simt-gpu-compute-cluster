@@ -106,7 +106,8 @@ module tb_predicate_register_file;
     drive_write(1, 2, 8'b1010_0101, 8'b0011_1100);
     check_read(1, 2);
 
-    // Same-cycle forwarding updates only selected lanes.
+    // Predicate results are not forwarded: consumers see committed state until
+    // the write edge, and dependency tracking prevents an architectural read.
     @(negedge clk);
     read_valid = 1'b1;
     read_warp = 2'd2;
@@ -118,13 +119,10 @@ module tb_predicate_register_file;
     write_data = 8'b1010_0101;
     #1;
     for (int unsigned lane = 0; lane < LANES; lane++) begin
-      if (write_lane_mask[lane]) begin
-        if (read_mask[lane] !== write_data[lane])
-          $fatal(1, "predicate forwarding mismatch lane=%0d", lane);
+      if (read_mask[lane] !== expected[2][3][lane])
+        $fatal(1, "predicate read exposed uncommitted data lane=%0d", lane);
+      if (write_lane_mask[lane])
         expected[2][3][lane] = write_data[lane];
-      end else if (read_mask[lane] !== expected[2][3][lane]) begin
-        $fatal(1, "predicate forwarding changed unmasked lane=%0d", lane);
-      end
       checks++;
     end
     @(posedge clk);
@@ -133,7 +131,7 @@ module tb_predicate_register_file;
     write_lane_mask = '0;
     check_read(2, 3);
 
-    // A write to another warp or predicate must not forward.
+    // Concurrent writes to any warp or predicate remain invisible before commit.
     @(negedge clk);
     read_valid = 1'b1;
     read_warp = 2'd0;
@@ -144,12 +142,12 @@ module tb_predicate_register_file;
     write_lane_mask = '1;
     write_data = '1;
     #1;
-    if (read_mask !== expected[0][1]) $fatal(1, "forwarding ignored warp ID");
+    if (read_mask !== expected[0][1]) $fatal(1, "cross-warp write affected read");
     checks++;
     write_warp = 2'd0;
     write_pred = 2'd2;
     #1;
-    if (read_mask !== expected[0][1]) $fatal(1, "forwarding ignored predicate ID");
+    if (read_mask !== expected[0][1]) $fatal(1, "other predicate write affected read");
     checks++;
     write_valid = 1'b0;
 

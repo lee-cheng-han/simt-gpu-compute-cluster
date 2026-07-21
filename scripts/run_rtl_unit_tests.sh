@@ -48,3 +48,20 @@ verilator --binary --timing --assert --Wall \
   rtl/frontend/instruction_fetch.sv \
   tb/unit/tb_instruction_fetch.sv
 build/verilator/instruction_fetch/Vtb_instruction_fetch
+
+mkdir -p build/verilator/writeback_unit
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/writeback_unit \
+  --top-module tb_writeback_unit \
+  rtl/execute/writeback_unit.sv \
+  tb/unit/tb_writeback_unit.sv
+build/verilator/writeback_unit/Vtb_writeback_unit
+
+mkdir -p build/verilator/completion_queue
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/completion_queue \
+  --top-module tb_completion_queue \
+  rtl/simt_gpu_pkg.sv \
+  rtl/execute/completion_queue.sv \
+  tb/unit/tb_completion_queue.sv
+build/verilator/completion_queue/Vtb_completion_queue
