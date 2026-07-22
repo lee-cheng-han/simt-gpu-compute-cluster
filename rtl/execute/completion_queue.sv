@@ -28,7 +28,7 @@ module completion_queue (
     occupancy_o = occupancy_q;
 
     dequeue = completion_valid_o && completion_ready_i;
-    completion_ready_o = (occupancy_q < QUEUE_DEPTH) || dequeue;
+    completion_ready_o = (occupancy_q < QUEUE_DEPTH) || completion_ready_i;
     enqueue = completion_valid_i && completion_ready_o;
   end
 

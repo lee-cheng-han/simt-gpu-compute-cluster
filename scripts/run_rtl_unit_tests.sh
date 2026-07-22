@@ -65,3 +65,14 @@ verilator --binary --timing --assert --Wall \
   rtl/execute/completion_queue.sv \
   tb/unit/tb_completion_queue.sv
 build/verilator/completion_queue/Vtb_completion_queue
+
+mkdir -p build/verilator/alu_completion_writeback
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/alu_completion_writeback \
+  --top-module tb_alu_completion_writeback \
+  rtl/simt_gpu_pkg.sv \
+  rtl/execute/completion_queue.sv \
+  rtl/execute/alu_completion_stage.sv \
+  rtl/execute/architectural_writeback.sv \
+  tb/unit/tb_alu_completion_writeback.sv
+build/verilator/alu_completion_writeback/Vtb_alu_completion_writeback

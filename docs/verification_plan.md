@@ -65,6 +65,12 @@ Assertions check occupancy bounds, valid record tags, and complete payload
 stability while stalled. Three instantiated sources, arbitration, and end-to-end
 conservation remain integration-level obligations.
 
+The ALU-completion/writeback integration test checks construction and transport
+of every canonical tag, writeback stalls, GPR data/masks, predicate retirement
+with an empty lane mask, epoch/warp/sequence/destination scoreboard-clear tags,
+stale-epoch cancellation, and fatal-fault suppression of an otherwise ready
+same-cycle commit. Multiplier/memory collisions and arbiter fairness remain open.
+
 Before synthesis freeze, static verification closes RTL lint, CDC, reset-domain
 crossings, reset deassertion, and interactions among functional, host, scan, and
 BIST clocks. Every reported crossing and exception receives a documented review.

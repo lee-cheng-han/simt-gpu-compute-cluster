@@ -13,9 +13,9 @@ checkable architectural behavior.
 
 ```text
 Release stage:  Specification merge and single-warp RTL integration
-Completed:      ISA tools, emulator, fetch/decode, register files, ALU, completion queue
+Completed:      ISA tools, emulator, fetch/decode, register files, ALU completion path
 Verified:       Python, C++, Verilator, and XSim component regressions
-In progress:    Tagged completion generation and architectural writeback
+In progress:    Dependency scoreboards and single-warp control
 Next:           Scoreboards and integrated single-warp processor
 Not started:    Multi-warp scheduling, memory system, DFT, physical implementation
 ```
