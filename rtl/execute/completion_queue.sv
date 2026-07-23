@@ -22,15 +22,12 @@ module completion_queue (
   logic enqueue;
   logic dequeue;
 
-  always_comb begin
-    completion_valid_o = (occupancy_q != 0);
-    completion_o = entries_q[head_q];
-    occupancy_o = occupancy_q;
-
-    dequeue = completion_valid_o && completion_ready_i;
-    completion_ready_o = (occupancy_q < QUEUE_DEPTH) || completion_ready_i;
-    enqueue = completion_valid_i && completion_ready_o;
-  end
+  assign completion_valid_o = (occupancy_q != 0);
+  assign completion_o = entries_q[head_q];
+  assign occupancy_o = occupancy_q;
+  assign dequeue = completion_valid_o && completion_ready_i;
+  assign completion_ready_o = (occupancy_q < QUEUE_DEPTH) || completion_ready_i;
+  assign enqueue = completion_valid_i && completion_ready_o;
 
   always_ff @(posedge clk) begin
     if (rst || flush_i) begin

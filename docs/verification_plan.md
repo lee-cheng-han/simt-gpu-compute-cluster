@@ -71,6 +71,18 @@ with an empty lane mask, epoch/warp/sequence/destination scoreboard-clear tags,
 stale-epoch cancellation, and fatal-fault suppression of an otherwise ready
 same-cycle commit. Multiplier/memory collisions and arbiter fairness remain open.
 
+The dependency-scoreboard test covers reset and host clear, per-warp isolation,
+GPR RAW/WAW blocking, predicate RAW/WAW blocking, exact epoch/warp/sequence/
+destination clear matching, rejection of wrong tags, same-cycle GPR commit release
+for register-file forwarding, and the required lack of same-cycle predicate
+release. An assertion forbids accepted issue while any dependency is unresolved.
+
+The single-warp integration test programs instruction memory and executes two
+independent immediate writes, a RAW-dependent add, a predicate comparison, a
+predicate-dependent guarded add, and lane-level `EXIT`. It checks six ordered,
+fully tagged architectural commits, representative lane results, predicate data,
+pipeline drainage, and clean kernel completion without a fault.
+
 Before synthesis freeze, static verification closes RTL lint, CDC, reset-domain
 crossings, reset deassertion, and interactions among functional, host, scan, and
 BIST clocks. Every reported crossing and exception receives a documented review.

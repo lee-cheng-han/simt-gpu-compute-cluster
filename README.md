@@ -13,10 +13,10 @@ checkable architectural behavior.
 
 ```text
 Release stage:  Specification merge and single-warp RTL integration
-Completed:      ISA tools, emulator, fetch/decode, register files, ALU completion path
+Completed:      Executable single-warp integer/predicate core and component foundation
 Verified:       Python, C++, Verilator, and XSim component regressions
-In progress:    Dependency scoreboards and single-warp control
-Next:           Scoreboards and integrated single-warp processor
+In progress:    Expanding the executable core beyond the initial integer cut
+Next:           Defined fault controller, then four-warp scheduling and multiplier
 Not started:    Multi-warp scheduling, memory system, DFT, physical implementation
 ```
 

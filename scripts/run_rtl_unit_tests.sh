@@ -76,3 +76,27 @@ verilator --binary --timing --assert --Wall \
   rtl/execute/architectural_writeback.sv \
   tb/unit/tb_alu_completion_writeback.sv
 build/verilator/alu_completion_writeback/Vtb_alu_completion_writeback
+
+mkdir -p build/verilator/dependency_scoreboard
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/dependency_scoreboard \
+  --top-module tb_dependency_scoreboard \
+  rtl/simt_gpu_pkg.sv \
+  rtl/control/dependency_scoreboard.sv \
+  tb/unit/tb_dependency_scoreboard.sv
+build/verilator/dependency_scoreboard/Vtb_dependency_scoreboard
+
+mkdir -p build/verilator/single_warp_core
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/single_warp_core --top-module tb_single_warp_core \
+  build/simt_isa_pkg.sv rtl/simt_gpu_pkg.sv \
+  rtl/frontend/instruction_memory.sv rtl/frontend/instruction_fetch.sv \
+  rtl/frontend/instruction_decoder.sv \
+  rtl/register_file/vector_register_file.sv \
+  rtl/register_file/predicate_register_file.sv \
+  rtl/execute/integer_lane.sv rtl/execute/vector_integer_alu.sv \
+  rtl/execute/completion_queue.sv rtl/execute/alu_completion_stage.sv \
+  rtl/execute/architectural_writeback.sv \
+  rtl/control/dependency_scoreboard.sv rtl/core/single_warp_core.sv \
+  tb/integration/tb_single_warp_core.sv
+build/verilator/single_warp_core/Vtb_single_warp_core

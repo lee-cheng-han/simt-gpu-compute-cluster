@@ -13,11 +13,15 @@ xvlog -sv build/simt_isa_pkg.sv rtl/simt_gpu_pkg.sv \
   rtl/execute/completion_queue.sv \
   rtl/execute/alu_completion_stage.sv \
   rtl/execute/architectural_writeback.sv \
+  rtl/control/dependency_scoreboard.sv \
+  rtl/core/single_warp_core.sv \
   tb/unit/tb_package_smoke.sv tb/unit/tb_instruction_decoder.sv \
   tb/unit/tb_vector_register_file.sv tb/unit/tb_predicate_register_file.sv \
   tb/unit/tb_vector_integer_alu.sv tb/unit/tb_instruction_fetch.sv \
   tb/unit/tb_writeback_unit.sv tb/unit/tb_completion_queue.sv \
-  tb/unit/tb_alu_completion_writeback.sv
+  tb/unit/tb_alu_completion_writeback.sv \
+  tb/unit/tb_dependency_scoreboard.sv \
+  tb/integration/tb_single_warp_core.sv
 xelab tb_package_smoke -s tb_package_smoke_sim
 xelab tb_instruction_decoder -s tb_instruction_decoder_sim
 xelab tb_vector_register_file -s tb_vector_register_file_sim
@@ -27,3 +31,5 @@ xelab tb_instruction_fetch -s tb_instruction_fetch_sim
 xelab tb_writeback_unit -s tb_writeback_unit_sim
 xelab tb_completion_queue -s tb_completion_queue_sim
 xelab tb_alu_completion_writeback -s tb_alu_completion_writeback_sim
+xelab tb_dependency_scoreboard -s tb_dependency_scoreboard_sim
+xelab tb_single_warp_core -s tb_single_warp_core_sim
