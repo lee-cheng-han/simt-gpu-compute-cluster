@@ -1,0 +1,58 @@
+module tb_single_warp_lifecycle;
+  import simt_gpu_pkg::*;
+  logic clk=0,rst,clear,prog_valid,launch_valid;
+  logic [5:0] prog_addr; logic [31:0] prog_data,launch_pc,fault_pc;
+  logic launch_ready,running,done,fault,commit_valid;
+  fault_code_t fault_code; completion_record_t commit;
+  int unsigned commits;
+  always #5 clk<=~clk;
+  single_warp_core dut(.clk(clk),.rst(rst),.clear_i(clear),.*,
+    .prog_valid_i(prog_valid),.prog_addr_i(prog_addr),.prog_data_i(prog_data),
+    .launch_valid_i(launch_valid),.launch_ready_o(launch_ready),
+    .launch_pc_i(launch_pc),.running_o(running),.done_o(done),.fault_o(fault),
+    .fault_pc_o(fault_pc),.fault_code_o(fault_code),
+    .commit_valid_o(commit_valid),.commit_o(commit));
+  task automatic pulse_clear; @(negedge clk); clear=1; @(posedge clk); #1; clear=0; endtask
+  task automatic program_word(input logic[5:0]a,input logic[31:0]d);
+    @(negedge clk); prog_addr=a;prog_data=d;prog_valid=1;@(posedge clk);#1;prog_valid=0; endtask
+  task automatic launch; @(negedge clk);if(!launch_ready)$fatal(1,"launch blocked");
+    launch_valid=1;@(posedge clk);#1;launch_valid=0; endtask
+  task automatic wait_fault(input fault_code_t expected,input logic[31:0]pc);
+    repeat(20)begin @(negedge clk);#1;if(fault)begin
+      if(fault_code!=expected||fault_pc!=pc)$fatal(1,"fault mismatch code=%0d pc=%0d",fault_code,fault_pc);
+      return;end end $fatal(1,"fault timeout"); endtask
+  initial begin
+    rst=1;clear=0;prog_valid=0;prog_addr=0;prog_data=0;launch_valid=0;launch_pc=0;commits=0;
+    repeat(2)@(posedge clk);@(negedge clk);rst=0;
+    // Lane IDs 0..3 exit first; lanes 4..7 execute MOVI before the final EXIT.
+    program_word(0,32'h74040003); program_word(1,32'h38080004);
+    program_word(2,32'h48004800); program_word(3,32'h7a000000);
+    program_word(4,32'h380c0009); program_word(5,32'h78000000); launch();
+    repeat(80)begin @(negedge clk);#1;if(fault)$fatal(1,"partial-exit program faulted");
+      if(commit_valid)begin
+        if($isunknown(commit))$fatal(1,"unknown completion");
+        if(commit.sequence_number==3 && commit.write_mask!=8'h0f)$fatal(1,"partial EXIT mask mismatch");
+        if(commit.sequence_number==4 && (commit.gpr_mask!=8'hf0||commit.gpr_data[7]!=9))
+          $fatal(1,"surviving-lane write mismatch");
+        if(commit.sequence_number==5 && commit.active_mask!=8'hf0)$fatal(1,"final EXIT active mask mismatch");
+        commits++;end
+      if(done)break;end
+    if(!done||commits!=6)$fatal(1,"partial-exit completion mismatch commits=%0d",commits);
+
+    pulse_clear(); program_word(0,32'h0c044800); // MUL R1,R1,R2
+    launch(); wait_fault(FAULT_UNSUPPORTED_STAGE,0);
+    if(done||commit_valid)$fatal(1,"unsupported instruction committed");
+
+    pulse_clear(); program_word(0,32'hfc000000); launch();
+    wait_fault(FAULT_ILLEGAL_INSTRUCTION,0);
+
+    pulse_clear(); program_word(0,32'h38040007); program_word(1,32'h78000000); launch();
+    @(negedge clk); prog_valid=1;prog_addr=6'd1;prog_data=32'h0;
+    @(posedge clk);#1;prog_valid=0; wait_fault(FAULT_IMEM_WRITE_WHILE_BUSY,0);
+    if(commit_valid||done)$fatal(1,"busy programming allowed architectural completion");
+
+    pulse_clear();
+    if(fault||done||running||!launch_ready)$fatal(1,"clear did not restore launch state");
+    $display("PASS tb_single_warp_lifecycle commits=%0d",commits);$finish;
+  end
+endmodule

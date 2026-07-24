@@ -12,11 +12,11 @@ checkable architectural behavior.
 ## Current status
 
 ```text
-Release stage:  Specification merge and single-warp RTL integration
-Completed:      Executable single-warp integer/predicate core and component foundation
+Release stage:  Four-warp execution and multiplier preparation
+Completed:      Verified executable single-warp integer/predicate processor
 Verified:       Python, C++, Verilator, and XSim component regressions
-In progress:    Expanding the executable core beyond the initial integer cut
-Next:           Defined fault controller, then four-warp scheduling and multiplier
+In progress:    SRAM feasibility and four-warp context architecture
+Next:           Round-robin warp scheduling and three-stage multiplier
 Not started:    Multi-warp scheduling, memory system, DFT, physical implementation
 ```
 

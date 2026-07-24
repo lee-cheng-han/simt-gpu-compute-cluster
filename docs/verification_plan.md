@@ -83,6 +83,13 @@ predicate-dependent guarded add, and lane-level `EXIT`. It checks six ordered,
 fully tagged architectural commits, representative lane results, predicate data,
 pipeline drainage, and clean kernel completion without a fault.
 
+The lifecycle integration test covers partial-mask and final lane exit, surviving-
+lane execution, unsupported-stage and illegal-instruction faults, instruction
+programming while busy, same-cycle suppression, sticky diagnostics, and clear
+recovery. The C++ emulator and RTL independently emit complete register,
+predicate, active-mask, PC, and instruction state after each architectural event;
+`scripts/compare_arch_traces.py` stops at the first differing line.
+
 Before synthesis freeze, static verification closes RTL lint, CDC, reset-domain
 crossings, reset deassertion, and interactions among functional, host, scan, and
 BIST clocks. Every reported crossing and exception receives a documented review.

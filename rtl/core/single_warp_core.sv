@@ -8,13 +8,14 @@ module single_warp_core #(
   input logic launch_valid_i, output logic launch_ready_o,
   input logic [31:0] launch_pc_i,
   output logic running_o, output logic done_o, output logic fault_o,
-  output logic [31:0] fault_pc_o,
+  output logic [31:0] fault_pc_o, output simt_gpu_pkg::fault_code_t fault_code_o,
   output logic commit_valid_o, output simt_gpu_pkg::completion_record_t commit_o
 );
   import simt_gpu_pkg::*;
   import simt_isa_pkg::*;
 
   logic imem_fv; logic [IMEM_ADDR_W-1:0] imem_fa; logic [31:0] imem_fd;
+  logic fetch_start_ready;
   logic fetch_v, fetch_r, fetch_running, fetch_fault;
   logic [31:0] fetch_pc, fetch_insn, fetch_fault_pc;
   logic legal, pred_enable, pred_invert, guard_exec;
@@ -41,19 +42,21 @@ module single_warp_core #(
   word_t [LANES-1:0] wb_gpr_data;
   logic [KERNEL_EPOCH_WIDTH-1:0] clear_epoch;
   logic [INSTRUCTION_SEQUENCE_WIDTH-1:0] clear_sequence;
-  logic launched_q, done_q, fault_q;
-  logic integration_fault;
+  logic launched_q, done_q, fatal_now, fault_valid;
+  logic illegal_fault, unsupported_fault, busy_program_fault;
+  logic [3:0] simultaneous_causes;
   logic [WARPS-1:0][REGS_PER_THREAD-1:0] gpr_pending;
   logic [WARPS-1:0][PREDS_PER_THREAD-1:0] pred_pending;
 
   instruction_memory #(.WORDS(IMEM_WORDS)) imem_u (
-    .clk(clk), .prog_valid_i(prog_valid_i && launch_ready_o),
+    .clk(clk), .prog_valid_i(prog_valid_i && launch_ready_o && !launched_q),
     .prog_addr_i(prog_addr_i), .prog_data_i(prog_data_i),
     .fetch_valid_i(imem_fv), .fetch_addr_i(imem_fa), .fetch_data_o(imem_fd));
   instruction_fetch #(.IMEM_WORDS(IMEM_WORDS)) fetch_u (
     .clk(clk), .rst(rst), .clear_fault_i(clear_i),
-    .start_valid_i(launch_valid_i), .start_ready_o(launch_ready_o),
-    .start_pc_i(launch_pc_i), .halt_i(fault_q || integration_fault ||
+    .start_valid_i(launch_valid_i && launch_ready_o),
+    .start_ready_o(fetch_start_ready),
+    .start_pc_i(launch_pc_i), .halt_i(fatal_now ||
       (issue_fire && opcode == OP_EXIT && ((active_mask_q & ~execute_mask) == '0))),
     .redirect_valid_i(1'b0), .redirect_pc_i('0),
     .imem_fetch_valid_o(imem_fv), .imem_fetch_addr_o(imem_fa),
@@ -76,14 +79,27 @@ module single_warp_core #(
     if (uses_ra) gpr_sources[ra] = 1'b1;
     if (uses_rb) gpr_sources[rb] = 1'b1;
     if (pred_enable) pred_sources[pred_index] = 1'b1;
-    integration_fault = fetch_v && (!legal || !supported);
-    fetch_r = fetch_v && supported && scoreboard_ready && alu_result_ready && !fault_q;
-    issue_fire = fetch_v && fetch_r;
-    running_o = fetch_running || (launched_q && !done_q && !fault_q);
-    done_o = done_q; fault_o = fault_q || fetch_fault;
-    fault_pc_o = fetch_fault ? fetch_fault_pc : fetch_pc;
-    commit_valid_o = wb_commit_v;
   end
+  assign illegal_fault = fetch_v && !legal;
+  assign unsupported_fault = fetch_v && legal && !supported;
+  assign busy_program_fault = prog_valid_i && (launched_q || fetch_running);
+  assign launch_ready_o = fetch_start_ready && !launched_q && !fatal_now;
+  assign fetch_r = fetch_v && supported && scoreboard_ready &&
+                   alu_result_ready && !fatal_now;
+  assign issue_fire = fetch_v && fetch_r;
+  assign running_o = fetch_running || (launched_q && !done_q && !fault_valid);
+  assign done_o = done_q;
+  assign fault_o = fault_valid;
+  assign commit_valid_o = wb_commit_v;
+
+  fatal_fault_controller fault_u (.clk(clk), .rst(rst), .clear_i(clear_i),
+    .host_fault_i(busy_program_fault), .host_fault_pc_i(fetch_pc),
+    .fetch_fault_i(fetch_fault), .fetch_fault_pc_i(fetch_fault_pc),
+    .illegal_fault_i(illegal_fault), .illegal_fault_pc_i(fetch_pc),
+    .unsupported_fault_i(unsupported_fault), .unsupported_fault_pc_i(fetch_pc),
+    .fatal_now_o(fatal_now), .fault_valid_o(fault_valid),
+    .fault_code_o(fault_code_o), .fault_pc_o(fault_pc_o),
+    .simultaneous_causes_o(simultaneous_causes));
 
   vector_register_file gpr_u (.clk(clk), .rst(rst), .read_valid_i(fetch_v),
     .read_warp_i('0), .read_ra_i(ra), .read_rb_i(rb), .read_a_o(src_a),
@@ -127,7 +143,7 @@ module single_warp_core #(
     .clear_warp_i(clear_warp), .clear_sequence_i(clear_sequence),
     .clear_gpr_i(clear_gpr), .clear_pred_i(clear_pred),
     .gpr_pending_o(gpr_pending), .pred_pending_o(pred_pending));
-  alu_completion_stage completion_u (.clk(clk), .rst(rst), .flush_i(clear_i || fault_q),
+  alu_completion_stage completion_u (.clk(clk), .rst(rst), .flush_i(clear_i || fatal_now),
     .result_valid_i(issue_fire), .result_ready_o(alu_result_ready),
     .epoch_i(epoch_q), .warp_id_i('0), .sequence_number_i(sequence_q),
     .pc_i(fetch_pc), .instruction_i(fetch_insn), .active_mask_i(active_mask_q),
@@ -137,7 +153,7 @@ module single_warp_core #(
     .pred_data_i(alu_pred_result), .completion_valid_o(completion_v),
     .completion_ready_i(queue_ready), .completion_o(completion),
     .occupancy_o(completion_occupancy));
-  architectural_writeback wb_u (.fatal_i(fault_q), .current_epoch_i(epoch_q),
+  architectural_writeback wb_u (.fatal_i(fatal_now), .current_epoch_i(epoch_q),
     .completion_valid_i(completion_v), .completion_ready_o(queue_ready),
     .completion_i(completion), .commit_valid_o(wb_commit_v), .commit_ready_i(1'b1),
     .commit_o(commit_o), .stale_cancel_o(stale_cancel),
@@ -153,20 +169,19 @@ module single_warp_core #(
 
   always_ff @(posedge clk) begin
     if (rst) begin epoch_q <= '0; sequence_q <= '0; active_mask_q <= '0;
-      launched_q <= 1'b0; done_q <= 1'b0; fault_q <= 1'b0; end
+      launched_q <= 1'b0; done_q <= 1'b0; end
     else if (clear_i) begin epoch_q <= epoch_q + 1'b1; sequence_q <= '0;
-      active_mask_q <= '0; launched_q <= 1'b0; done_q <= 1'b0; fault_q <= 1'b0; end
+      active_mask_q <= '0; launched_q <= 1'b0; done_q <= 1'b0; end
     else begin
       if (launch_valid_i && launch_ready_o) begin active_mask_q <= '1;
         sequence_q <= '0; launched_q <= 1'b1; done_q <= 1'b0; end
-      if (integration_fault || fetch_fault) fault_q <= 1'b1;
       if (issue_fire) begin
         sequence_q <= sequence_q + 1'b1;
         if (opcode == OP_EXIT) active_mask_q <= active_mask_q & ~execute_mask;
       end
       if (launched_q && active_mask_q == '0 && !fetch_running &&
           !completion_v && completion_occupancy == 0 &&
-          gpr_pending == '0 && pred_pending == '0 && !fault_q)
+          gpr_pending == '0 && pred_pending == '0 && !fatal_now)
         done_q <= 1'b1;
     end
   end
@@ -183,6 +198,7 @@ module single_warp_core #(
       assert (branch_condition == '0 && memory_address == '0 && store_data == '0);
     end
     assert (!stale_cancel);
+    if (fault_valid) assert (simultaneous_causes != 0);
   end
 `endif
 endmodule

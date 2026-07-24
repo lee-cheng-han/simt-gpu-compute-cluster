@@ -97,6 +97,26 @@ verilator --binary --timing --assert --Wall \
   rtl/execute/integer_lane.sv rtl/execute/vector_integer_alu.sv \
   rtl/execute/completion_queue.sv rtl/execute/alu_completion_stage.sv \
   rtl/execute/architectural_writeback.sv \
-  rtl/control/dependency_scoreboard.sv rtl/core/single_warp_core.sv \
+  rtl/control/dependency_scoreboard.sv rtl/control/fatal_fault_controller.sv \
+  rtl/core/single_warp_core.sv \
   tb/integration/tb_single_warp_core.sv
 build/verilator/single_warp_core/Vtb_single_warp_core
+python3 tools/assembler/assembler.py tb/programs/single_warp_integer.s \
+  -o build/single_warp_integer.bin
+build/simt-emulator build/single_warp_integer.bin \
+  --dump build/single_warp_integer.state --trace build/emulator_single_warp.trace
+python3 scripts/compare_arch_traces.py \
+  build/emulator_single_warp.trace build/rtl_single_warp.trace
+
+mkdir -p build/verilator/single_warp_lifecycle
+verilator --binary --timing --assert --Wall \
+  --Mdir build/verilator/single_warp_lifecycle --top-module tb_single_warp_lifecycle \
+  build/simt_isa_pkg.sv rtl/simt_gpu_pkg.sv \
+  rtl/frontend/instruction_memory.sv rtl/frontend/instruction_fetch.sv \
+  rtl/frontend/instruction_decoder.sv rtl/register_file/vector_register_file.sv \
+  rtl/register_file/predicate_register_file.sv rtl/execute/integer_lane.sv \
+  rtl/execute/vector_integer_alu.sv rtl/execute/completion_queue.sv \
+  rtl/execute/alu_completion_stage.sv rtl/execute/architectural_writeback.sv \
+  rtl/control/dependency_scoreboard.sv rtl/control/fatal_fault_controller.sv \
+  rtl/core/single_warp_core.sv tb/integration/tb_single_warp_lifecycle.sv
+build/verilator/single_warp_lifecycle/Vtb_single_warp_lifecycle

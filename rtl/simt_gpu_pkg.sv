@@ -34,6 +34,14 @@ package simt_gpu_pkg;
     COMPLETION_STATUS_RESERVED3 = 2'b11
   } completion_status_t;
 
+  typedef enum logic [3:0] {
+    FAULT_NONE                  = 4'd0,
+    FAULT_IMEM_WRITE_WHILE_BUSY = 4'd1,
+    FAULT_FETCH_PC_RANGE        = 4'd2,
+    FAULT_ILLEGAL_INSTRUCTION   = 4'd3,
+    FAULT_UNSUPPORTED_STAGE     = 4'd4
+  } fault_code_t;
+
   typedef struct packed {
     logic                                      valid;
     logic [KERNEL_EPOCH_WIDTH-1:0]             epoch;

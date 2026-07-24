@@ -3,7 +3,12 @@ module tb_single_warp_core;
   logic clk = 0, rst, clear, prog_valid, launch_valid;
   logic [5:0] prog_addr; logic [31:0] prog_data, launch_pc, fault_pc;
   logic launch_ready, running, done, fault, commit_valid;
+  fault_code_t fault_code;
   completion_record_t commit;
+  word_t shadow_gpr [REGS_PER_THREAD][LANES];
+  lane_mask_t shadow_pred [PREDS_PER_THREAD];
+  lane_mask_t shadow_active;
+  integer trace_file;
   int unsigned commits;
   always #5 clk <= ~clk;
   single_warp_core dut (.*,
@@ -11,7 +16,8 @@ module tb_single_warp_core;
     .prog_data_i(prog_data), .launch_valid_i(launch_valid),
     .launch_ready_o(launch_ready), .launch_pc_i(launch_pc),
     .running_o(running), .done_o(done), .fault_o(fault),
-    .fault_pc_o(fault_pc), .commit_valid_o(commit_valid), .commit_o(commit));
+    .fault_pc_o(fault_pc), .fault_code_o(fault_code),
+    .commit_valid_o(commit_valid), .commit_o(commit));
 
   task automatic program_word(input logic [5:0] address, input logic [31:0] data);
     @(negedge clk); prog_addr = address; prog_data = data; prog_valid = 1;
@@ -20,6 +26,9 @@ module tb_single_warp_core;
   initial begin
     rst=1; clear=0; prog_valid=0; prog_addr=0; prog_data=0;
     launch_valid=0; launch_pc=0; commits=0;
+    shadow_active='1; for(int r=0;r<REGS_PER_THREAD;r++)for(int l=0;l<LANES;l++)shadow_gpr[r][l]=0;
+    for(int p=0;p<PREDS_PER_THREAD;p++)shadow_pred[p]=0;
+    trace_file=$fopen("build/rtl_single_warp.trace","w");
     repeat(2) @(posedge clk); @(negedge clk); rst=0;
     program_word(0,32'h38040007); program_word(1,32'h38080003);
     program_word(2,32'h040c4800); program_word(3,32'h4000cc00);
@@ -49,11 +58,19 @@ module tb_single_warp_core;
                  commit.active_mask != 8'hff) $fatal(1,"EXIT mismatch");
           default: $fatal(1,"unexpected extra commit");
         endcase
+        if(commit.writes_gpr)for(int l=0;l<LANES;l++)if(commit.gpr_mask[l])shadow_gpr[commit.gpr_dst][l]=commit.gpr_data[l];
+        if(commit.writes_pred)for(int l=0;l<LANES;l++)if(commit.pred_mask[l])shadow_pred[commit.pred_dst][l]=commit.pred_data[l];
+        if(commit.instruction[31:26]==6'd30)shadow_active&=~commit.write_mask;
+        $fwrite(trace_file,"E %0d %08x %08x %02x\nR",commits,commit.pc,commit.instruction,shadow_active);
+        for(int r=0;r<REGS_PER_THREAD;r++)for(int l=0;l<LANES;l++)$fwrite(trace_file," %08x",shadow_gpr[r][l]);
+        $fwrite(trace_file,"\nP");for(int p=0;p<PREDS_PER_THREAD;p++)$fwrite(trace_file," %02x",shadow_pred[p]);$fwrite(trace_file,"\n");
         commits++;
       end
       if (done) begin
-        if (commits != 6 || running) $fatal(1,"completion state mismatch");
+        if (commits != 6 || running || fault_code != FAULT_NONE)
+          $fatal(1,"completion state mismatch");
         $display("PASS tb_single_warp_core commits=%0d", commits);
+        $fclose(trace_file);
         $finish;
       end
     end

@@ -7,7 +7,7 @@
 namespace simt {
 static int32_t sx10(uint32_t x){return (x&0x200)?int32_t(x|0xfffffc00u):int32_t(x);}
 Emulator::Emulator(std::size_t n,std::size_t sn):memory_(n,0),shared_(sn,0){}
-void Emulator::load_program(const std::vector<uint32_t>&w){program_=w;pc_=0;active_=0xff;result_={};stack_.clear();ssy_valid_=false;for(auto&v:r_)v.fill(0);p_.fill(0);}
+void Emulator::load_program(const std::vector<uint32_t>&w){program_=w;pc_=0;active_=0xff;result_={};stack_.clear();trace_.clear();ssy_valid_=false;for(auto&v:r_)v.fill(0);p_.fill(0);}
 void Emulator::load_memory_text(const std::string&path){std::ifstream f(path);if(!f)throw std::runtime_error("cannot open memory: "+path);std::string line;while(std::getline(f,line)){if(auto q=line.find('#');q!=std::string::npos)line.resize(q);std::istringstream s(line);uint32_t a,v;if(s>>std::hex>>a>>v){if(a>memory_.size()||memory_.size()-a<4)throw std::runtime_error("memory initializer out of range");store32(memory_,a,v);}}}
 bool Emulator::fault(Fault f){result_.fault=f;result_.fault_pc=pc_;return false;}
 uint32_t Emulator::load32(const std::vector<uint8_t>&m,uint32_t a){return uint32_t(m[a])|(uint32_t(m[a+1])<<8)|(uint32_t(m[a+2])<<16)|(uint32_t(m[a+3])<<24);}
@@ -54,9 +54,11 @@ Result Emulator::run(uint64_t limit){
    case Opcode::EXIT:active_&=Mask(~exec);if(!active_)result_.exited=true;break;
    case Opcode::SYNC:if(stack_.empty()){pc_=oldpc;fault(Fault::StackUnderflow);break;}if(stack_.back().reconv!=oldpc){pc_=oldpc;fault(Fault::IllegalInstruction);break;}if(stack_.back().deferred){auto&s=stack_.back();pc_=s.deferred_pc;active_=s.deferred_mask;s.deferred=false;}else{active_=stack_.back().union_mask;stack_.pop_back();}break;
   }
+  if(result_.fault==Fault::None)trace_.push_back({oldpc,w,active_,r_,p_});
  }
  if(result_.fault==Fault::None&&!result_.exited&&result_.steps>=limit) fault(Fault::StepLimit);
  return result_;
 }
 void Emulator::dump(const std::string&path)const{std::ofstream f(path);f<<"PC "<<pc_<<"\nACTIVE "<<std::hex<<unsigned(active_)<<"\nFAULT "<<std::dec<<int(result_.fault)<<"\n";for(unsigned l=0;l<kLanes;l++){f<<"LANE "<<l;for(unsigned r=0;r<kRegs;r++)f<<" R"<<r<<'='<<std::hex<<std::setw(8)<<std::setfill('0')<<r_[r][l];f<<"\n";}for(size_t a=0;a+4<=memory_.size();a+=4){auto v=load32(memory_,a);if(v)f<<"MEM "<<std::hex<<a<<' '<<v<<"\n";}for(size_t a=0;a+4<=shared_.size();a+=4){auto v=load32(shared_,a);if(v)f<<"SHMEM "<<std::hex<<a<<' '<<v<<"\n";}}
+void Emulator::dump_trace(const std::string&path)const{std::ofstream f(path);for(size_t n=0;n<trace_.size();n++){const auto&e=trace_[n];f<<"E "<<std::dec<<n<<' '<<std::hex<<std::setw(8)<<std::setfill('0')<<e.pc<<' '<<std::setw(8)<<e.instruction<<' '<<std::setw(2)<<unsigned(e.active)<<"\nR";for(unsigned r=0;r<kRegs;r++)for(unsigned l=0;l<kLanes;l++)f<<' '<<std::setw(8)<<e.registers[r][l];f<<"\nP";for(auto p:e.predicates)f<<' '<<std::setw(2)<<unsigned(p);f<<"\n";}}
 }
